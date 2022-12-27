@@ -1,3 +1,7 @@
+## NOTES
+
+this is a react app created with create-react-app that has reacty components and hoooks to handle creating canvases and drawing zoom boxes - no integration with wasm
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
