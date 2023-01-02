@@ -7,6 +7,8 @@ const useCanvas = (draw, options) => {
   // the canvas doesn't rebuild every time there is a new draw
   const canRef = useRef(null);
 
+  //
+
   // runs on the first call/ render, and when draw is changed, may want to change this
   // for resizing like going into fullscreen
   useEffect(() => {
@@ -28,5 +30,8 @@ const useCanvas = (draw, options) => {
 
   return canRef;
 };
+
+// use forwardref should make this ref usuable to viewerComponent, could be
+// really nice for resizing and such
 
 export default useCanvas;

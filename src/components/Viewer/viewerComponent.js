@@ -7,11 +7,71 @@
 import Canvas from "./canvasComponent";
 import "./viewer.css";
 import { useState } from "react";
+import useGenPixels from "../../helpers/genPixlesHook";
 
 const Viewer = ({ xRes, yRes }) => {
   // empty draw
   const draw = (ctx) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  };
+
+  // to keep things kosher, we will put this here in the outermost part of our componenent, but it
+  // depends on a bunch of stuff that changes, so will rerun when that stuff changes (namely - mandCords)
+  // draw mand will depend on the pixle array that this returns, so then it will rerun every time this returns
+  // I beleive this is the way to keep the flow all good
+  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
+
+  const [pixles, setPixles] = useState();
+  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600)
+  //console.log(pixles);
+
+  const drawMand = (ctx) => {
+    // in here have mandCords stuff, will cause rerun (thus update the mandlebeort canvas)
+    // hoping to call genPixlesHook in here to get the pxiels we need, but might not be how
+    // you should do things in react
+
+    // clear
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    console.log("pixles");
+
+    ctx.putImageData(pixles, 0, 0);
+
+    // FIRST JUST TRY TO DRAW IT
+
+    //
+    // let width = mandCords.endX - mandCords.startX;
+    // let height = mandCords.endY - mandCords.startY;
+
+    // let widthScale = width / ctx.canvas.width;
+    // let heightScale = height / ctx.canvas.height;
+    // // if not on first iteration
+    // if (!first) {
+    //   // calculate new start corodinates
+    //   startX = prevWidthScale * startX + prevStartX;
+    //   startY = prevHeightScale * startY + prevStartY;
+    //   // calculate new scales
+    //   widthScale = widthScale * prevWidthScale;
+    //   heightScale = heightScale * prevHeightScale;
+    // }
+    // let newCanHeight;
+    // let newCanWidth;
+
+    // // if height is more zoomed in
+    // if (heightScale > widthScale) {
+    //   // want full height
+    //   newCanHeight = canHeight;
+    //   // want width properlly scalled and correct based on height
+    //   newCanWidth = canHeight * (width / height);
+    //   widthScale = (canWidth / newCanWidth) * widthScale;
+    //   // same for width
+    // } else {
+    //   newCanWidth = canWidth;
+    //   newCanHeight = canWidth * (height / width);
+    //   heightScale = (canHeight / newCanHeight) * heightScale;
+    // }
+    // // useGenPixels(mandCords.startX, mandCords.startY);
+    // setFirst(false);
   };
 
   // RECTANGLE STUFF //
@@ -50,6 +110,16 @@ const Viewer = ({ xRes, yRes }) => {
 
   const [drawing, setDrawing] = useState(false);
 
+  //TEMPORTARY - DO THIS WITH ZUSTAND
+  const [first, setFirst] = useState(true);
+
+  const [mandCords, setMandCords] = useState({
+    startX: null,
+    startY: null,
+    endX: null,
+    endY: null,
+  });
+
   const rectOpts = {
     strokeStyle: "red",
     lineWidth: 5,
@@ -84,18 +154,30 @@ const Viewer = ({ xRes, yRes }) => {
     // TODO add ending stuff for drawing the mandlebrot
     setIsDown(false);
     setDrawing(false);
+    setMandCords(
+      finalCords.startX,
+      finalCords.startY,
+      finalCords.endX,
+      finalCords.endY
+    );
+
+    // call setPixles to redraw
   }
+  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
+
+  //let p = useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
 
   /////////////////////////////////////////////
 
   // need to create two canvases, one for drawing and one for fractals
+
   return (
     <>
       <Canvas
         className="can"
+        draw={draw}
         xRes={3840}
         yRes={2160}
-        draw={draw}
         id="mandCan"
       />
       <Canvas
