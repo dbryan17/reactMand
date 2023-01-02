@@ -5,8 +5,4 @@ const useDimStore = create((set) => ({
   startY: 0,
   endX: 0,
   endY: 0,
-  prevStartX: 0,
-  prevStartY: 0,
-  prevWidthScale: 0,
-  prevHeightScale: 0,
 }));
