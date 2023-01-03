@@ -25,6 +25,10 @@ const Viewer = ({ xRes, yRes }) => {
   //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600)
   //console.log(pixles);
 
+  let p = useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600);
+
+  // console.log(p);
+
   const drawMand = (ctx) => {
     // in here have mandCords stuff, will cause rerun (thus update the mandlebeort canvas)
     // hoping to call genPixlesHook in here to get the pxiels we need, but might not be how
@@ -33,9 +37,10 @@ const Viewer = ({ xRes, yRes }) => {
     // clear
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    console.log("pixles");
-
-    ctx.putImageData(pixles, 0, 0);
+    // console.log("pixles");
+    if (p) {
+      ctx.putImageData(p, 0, 0);
+    }
 
     // FIRST JUST TRY TO DRAW IT
 
@@ -175,7 +180,7 @@ const Viewer = ({ xRes, yRes }) => {
     <>
       <Canvas
         className="can"
-        draw={draw}
+        draw={drawMand}
         xRes={3840}
         yRes={2160}
         id="mandCan"
