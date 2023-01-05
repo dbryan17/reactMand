@@ -1,5 +1,5 @@
 import createModule from "../mandlebrotCPP.mjs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const useGenPixles = (
   startX,
@@ -14,18 +14,21 @@ const useGenPixles = (
 ) => {
   // const [genPixles, setGenPixles] = useState();
   //var [myModule, setMyModule] = useState();
-  var genPixles = null;
-  // for some reason this doesn't work in a useState, maybe try useRef?
-  var myModule = null;
+
   const [pixles, setPixles] = useState(null);
   //const [pixelArray, setPixelArray] = useState(null);
 
-  // this use effect runs once!!!! gets the module
+  // maybe try useCallback for this
+  var genPixles = useRef(null);
+  // for some reason this doesn't work in a useState, maybe try useRef? - always doesn't work as var, so need to chagne thius
+  // to save tiume'
+
+  var myModule = useRef(null);
 
   useEffect(() => {
     const myCreateModule = async () => {
       createModule().then((Module) => {
-        genPixles = Module.cwrap("genPixles", "null", [
+        genPixles.current = Module.cwrap("genPixles", "null", [
           "number",
           "number",
           "number",
@@ -37,10 +40,8 @@ const useGenPixles = (
           "number",
         ]);
 
-        // console.log("created"); // CHECK - this should only run on first call
         //setMyModule(Module);
-        myModule = Module;
-        // console.log(myModule);
+        myModule.current = Module;
         myGenPixles();
       });
     };
@@ -48,32 +49,19 @@ const useGenPixles = (
     const myGenPixles = async () => {
       // using emscriptens malloc to allocate memory on the emscripten heap
       // of array this returns a pointer to it
-      // console.log("in myGenPixes");
-      // console.log(myModule);
-      let pixlesPtr = myModule._malloc(
+      let pixlesPtr = myModule.current._malloc(
         arrayLength * Uint8Array.BYTES_PER_ELEMENT
       );
 
       // copy data to Emscripten heap (directly accessed from Module.HEAPU8)
       let dataheap = new Uint8Array(
-        myModule.HEAPU8.buffer,
+        myModule.current.HEAPU8.buffer,
         pixlesPtr,
         arrayLength * Uint8Array.BYTES_PER_ELEMENT
       );
 
-      // console.log(
-      //   startX,
-      //   startY,
-      //   newCanHeight,
-      //   newCanWidth,
-      //   canWidth,
-      //   canHeight,
-      //   widthScale,
-      //   heightScale
-      // );
-
       // call function
-      await genPixles(
+      await genPixles.current(
         startX,
         startY,
         newCanWidth,
@@ -92,10 +80,7 @@ const useGenPixles = (
         arrayLength
       );
 
-      myModule._free(myModule.HEAPU8.buffer);
-
-      // console.log(tmpPixelArray.length);
-      // console.log(canWidth, canHeight);
+      myModule.current._free(myModule.current.HEAPU8.buffer);
 
       let data = new ImageData(tmpPixelArray, canWidth, canHeight);
 
@@ -103,13 +88,10 @@ const useGenPixles = (
 
       return data;
     };
-
-    if (!myModule) {
+    if (!myModule.current) {
       myCreateModule();
-      // console.log("here");
       // myGenPixles();
     } else {
-      // console.log("h");
       myGenPixles();
     }
 
@@ -125,7 +107,6 @@ const useGenPixles = (
     heightScale,
     arrayLength,
   ]);
-  // console.log("returne");
   return pixles;
 };
 

@@ -21,13 +21,117 @@ const Viewer = ({ xRes, yRes }) => {
   // I beleive this is the way to keep the flow all good
   //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
 
-  const [pixles, setPixles] = useState();
+  // const [pixles, setPixles] = useState(
+  //   useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600)
+  // );
   //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600)
-  //console.log(pixles);
 
-  let p = useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600);
+  // MANDLEBROT STATE
 
-  // console.log(p);
+  //TEMPORTARY - DO THIS WITH ZUSTAND
+  //const [first, setFirst] = useState(true);
+
+  const [prevMandCords, setPrevMandCords] = useState({
+    startX: 0,
+    startY: 0,
+    widthScale: 1,
+    heightScale: 1,
+  });
+
+  const [clinetDims, setClientDims] = useState({
+    width: null,
+    height: null,
+  });
+
+  const [genPixlesParams, setGenPixlesParams] = useState({
+    startX: 0,
+    startY: 0,
+    newCanWidth: xRes,
+    newCanHeight: yRes,
+    canWidth: xRes,
+    canHeight: yRes,
+    widthScale: 1,
+    heightScale: 1,
+    arrayLength: xRes * yRes * 4,
+  });
+
+  let p = useGenPixels(
+    genPixlesParams.startX,
+    genPixlesParams.startY,
+    genPixlesParams.newCanWidth,
+    genPixlesParams.newCanHeight,
+    genPixlesParams.canWidth,
+    genPixlesParams.canHeight,
+    genPixlesParams.widthScale,
+    genPixlesParams.heightScale,
+    genPixlesParams.arrayLength
+  );
+
+  //let p = useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600);
+
+  const interDrawMand = (startX, startY, endX, endY) => {
+    // this function will do all that draw does in generator.js - then set the final
+    // state to trigger the what we need for genPixles hook to run
+    // it is called on mouse up
+    // will always be on second iteration
+
+    startX = startX * (xRes / clinetDims.width);
+    endX = endX * (xRes / clinetDims.width);
+    startY = startY * (yRes / clinetDims.height);
+    endY = endY * (yRes / clinetDims.height);
+
+    let width = endX - startX;
+    let height = endY - startY;
+
+    // curretn width scales
+    let widthScale = width / xRes;
+    let heightScale = height / yRes;
+
+    // idk if you can do this in react - might need a new var
+    startX = prevMandCords.widthScale * startX + prevMandCords.startX;
+    startY = prevMandCords.heightScale * startY + prevMandCords.startY;
+
+    // calculate new scales
+    widthScale = widthScale * prevMandCords.widthScale;
+    heightScale = heightScale * prevMandCords.heightScale;
+
+    let newCanWidth;
+    let newCanHeight;
+
+    // if height is more zoomed in
+    if (heightScale > widthScale) {
+      // want full height
+      newCanHeight = yRes;
+      // want width properlly scalled and correct based on height
+      newCanWidth = yRes * (width / height);
+      widthScale = (xRes / newCanWidth) * widthScale;
+      // same for width
+    } else {
+      newCanWidth = xRes;
+      newCanHeight = xRes * (height / width);
+      heightScale = (yRes / newCanHeight) * heightScale;
+    }
+
+    // now we have all we need for the useGenPixles hook to rerun, so set that state
+    setGenPixlesParams({
+      startX: startX,
+      startY: startY,
+      newCanWidth: newCanWidth,
+      newCanHeight: newCanHeight,
+      canWidth: xRes,
+      canHeight: yRes,
+      widthScale: widthScale,
+      heightScale: heightScale,
+      arrayLength: xRes * yRes * 4,
+    });
+
+    setPrevMandCords({
+      startX: startX,
+      startY: startY,
+      widthScale: widthScale,
+      heightScale: heightScale,
+    });
+  };
 
   const drawMand = (ctx) => {
     // in here have mandCords stuff, will cause rerun (thus update the mandlebeort canvas)
@@ -35,48 +139,25 @@ const Viewer = ({ xRes, yRes }) => {
     // you should do things in react
 
     // clear
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // console.log("pixles");
-    if (p) {
-      ctx.putImageData(p, 0, 0);
+    if (
+      ctx.canvas.clientHeight !== clinetDims.height ||
+      ctx.canvas.clientWidth !== clinetDims.width
+    ) {
+      setClientDims({
+        width: ctx.canvas.clientWidth,
+        height: ctx.canvas.clientHeight,
+      });
     }
 
-    // FIRST JUST TRY TO DRAW IT
+    //interDrawMand(realStartX, realStartY, realEndX, realEndY);
 
-    //
-    // let width = mandCords.endX - mandCords.startX;
-    // let height = mandCords.endY - mandCords.startY;
+    // calling this everytime anyway so
 
-    // let widthScale = width / ctx.canvas.width;
-    // let heightScale = height / ctx.canvas.height;
-    // // if not on first iteration
-    // if (!first) {
-    //   // calculate new start corodinates
-    //   startX = prevWidthScale * startX + prevStartX;
-    //   startY = prevHeightScale * startY + prevStartY;
-    //   // calculate new scales
-    //   widthScale = widthScale * prevWidthScale;
-    //   heightScale = heightScale * prevHeightScale;
-    // }
-    // let newCanHeight;
-    // let newCanWidth;
-
-    // // if height is more zoomed in
-    // if (heightScale > widthScale) {
-    //   // want full height
-    //   newCanHeight = canHeight;
-    //   // want width properlly scalled and correct based on height
-    //   newCanWidth = canHeight * (width / height);
-    //   widthScale = (canWidth / newCanWidth) * widthScale;
-    //   // same for width
-    // } else {
-    //   newCanWidth = canWidth;
-    //   newCanHeight = canWidth * (height / width);
-    //   heightScale = (canHeight / newCanHeight) * heightScale;
-    // }
-    // // useGenPixels(mandCords.startX, mandCords.startY);
-    // setFirst(false);
+    if (p) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.putImageData(p, 0, 0);
+    }
   };
 
   // RECTANGLE STUFF //
@@ -99,6 +180,8 @@ const Viewer = ({ xRes, yRes }) => {
 
   // this state needs to be seperate because changing this is what trigger
   // a redraw since it is in drawRect
+
+  // RECTANGLE STATE
   const [finalCords, setFinalCords] = useState({
     startX: null,
     startY: null,
@@ -114,16 +197,6 @@ const Viewer = ({ xRes, yRes }) => {
   const [isDown, setIsDown] = useState(false);
 
   const [drawing, setDrawing] = useState(false);
-
-  //TEMPORTARY - DO THIS WITH ZUSTAND
-  const [first, setFirst] = useState(true);
-
-  const [mandCords, setMandCords] = useState({
-    startX: null,
-    startY: null,
-    endX: null,
-    endY: null,
-  });
 
   const rectOpts = {
     strokeStyle: "red",
@@ -159,14 +232,49 @@ const Viewer = ({ xRes, yRes }) => {
     // TODO add ending stuff for drawing the mandlebrot
     setIsDown(false);
     setDrawing(false);
-    setMandCords(
-      finalCords.startX,
-      finalCords.startY,
-      finalCords.endX,
-      finalCords.endY
-    );
+    // resetting these mandCords should trigger a rerender of usegenPixles
 
-    // call setPixles to redraw
+    let startX = finalCords.startX;
+    let endX = finalCords.endX;
+    let startY = finalCords.startY;
+    let endY = finalCords.endY;
+
+    if (startX > endX) {
+      let tmpStart = startX;
+      startX = endX;
+      endX = tmpStart;
+    }
+    if (startY > endY) {
+      let tmpStart = startY;
+      startY = endY;
+      endY = tmpStart;
+    }
+
+    // instead call a function to with these and set all variables used in genPixles hook at once,
+    // make that function dshould be a hook but I don't think it needs to
+    if (!(startY === endY || startX === endX)) {
+      // need to have mand cords after all
+      interDrawMand(
+        Math.round(startX),
+        Math.round(startY),
+        Math.round(endX),
+        Math.round(endY)
+      );
+      // setMandCords(
+      //   Math.round(finalCords.startX),
+      //   Math.round(finalCords.startY),
+      //   Math.round(finalCords.endX),
+      //   Math.round(finalCords.endY)
+      // );
+    }
+
+    // setMandCords(
+    //   Math.round(finalCords.startX),
+    //   Math.round(finalCords.startY),
+    //   Math.round(finalCords.endX),
+    //   Math.round(finalCords.endY)
+    // );
+    //setFirst(true);
   }
   //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
 
