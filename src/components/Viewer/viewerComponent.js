@@ -6,37 +6,32 @@
 
 import Canvas from "./canvasComponent";
 import "./viewer.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useGenPixels from "../../helpers/genPixlesHook";
 
-const Viewer = ({ xRes, yRes }) => {
-  // empty draw
-  const draw = (ctx) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  };
+const Viewer = ({ xRes, yRes, back }) => {
+  const [prevMandCords, setPrevMandCords] = useState([
+    {
+      startX: 0,
+      startY: 0,
+      widthScale: 1,
+      heightScale: 1,
+    },
+  ]);
 
-  // to keep things kosher, we will put this here in the outermost part of our componenent, but it
-  // depends on a bunch of stuff that changes, so will rerun when that stuff changes (namely - mandCords)
-  // draw mand will depend on the pixle array that this returns, so then it will rerun every time this returns
-  // I beleive this is the way to keep the flow all good
-  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
+  // should always start with 0
+  const [hereBack, setHereBack] = useState(back);
 
-  // const [pixles, setPixles] = useState(
-  //   useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600)
-  // );
-  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600)
+  useEffect(() => {
+    console.log("here");
+    if (back !== hereBack) {
+      setPrevMandCords((prevMandCords) => prevMandCords.slice(0, -1));
+      setGenPixlesParams(paramsStack.pop());
+      setHereBack(back);
+    }
+  }, [back]);
 
-  // MANDLEBROT STATE
-
-  //TEMPORTARY - DO THIS WITH ZUSTAND
-  //const [first, setFirst] = useState(true);
-
-  const [prevMandCords, setPrevMandCords] = useState({
-    startX: 0,
-    startY: 0,
-    widthScale: 1,
-    heightScale: 1,
-  });
+  const [paramsStack, setParamsStack] = useState([]);
 
   const [clinetDims, setClientDims] = useState({
     width: null,
@@ -67,13 +62,14 @@ const Viewer = ({ xRes, yRes }) => {
     genPixlesParams.arrayLength
   );
 
-  //let p = useGenPixels(0, 0, 3840, 2160, 3840, 2160, 1, 1, 33177600);
-
   const interDrawMand = (startX, startY, endX, endY) => {
     // this function will do all that draw does in generator.js - then set the final
     // state to trigger the what we need for genPixles hook to run
     // it is called on mouse up
     // will always be on second iteration
+
+    // add last p to the stack
+    setParamsStack([...paramsStack, genPixlesParams]);
 
     startX = startX * (xRes / clinetDims.width);
     endX = endX * (xRes / clinetDims.width);
@@ -87,13 +83,16 @@ const Viewer = ({ xRes, yRes }) => {
     let widthScale = width / xRes;
     let heightScale = height / yRes;
 
-    // idk if you can do this in react - might need a new var
-    startX = prevMandCords.widthScale * startX + prevMandCords.startX;
-    startY = prevMandCords.heightScale * startY + prevMandCords.startY;
+    console.log(prevMandCords);
+
+    startX =
+      prevMandCords.at(-1).widthScale * startX + prevMandCords.at(-1).startX;
+    startY =
+      prevMandCords.at(-1).heightScale * startY + prevMandCords.at(-1).startY;
 
     // calculate new scales
-    widthScale = widthScale * prevMandCords.widthScale;
-    heightScale = heightScale * prevMandCords.heightScale;
+    widthScale = widthScale * prevMandCords.at(-1).widthScale;
+    heightScale = heightScale * prevMandCords.at(-1).heightScale;
 
     let newCanWidth;
     let newCanHeight;
@@ -125,12 +124,15 @@ const Viewer = ({ xRes, yRes }) => {
       arrayLength: xRes * yRes * 4,
     });
 
-    setPrevMandCords({
-      startX: startX,
-      startY: startY,
-      widthScale: widthScale,
-      heightScale: heightScale,
-    });
+    setPrevMandCords([
+      ...prevMandCords,
+      {
+        startX: startX,
+        startY: startY,
+        widthScale: widthScale,
+        heightScale: heightScale,
+      },
+    ]);
   };
 
   const drawMand = (ctx) => {
@@ -200,7 +202,7 @@ const Viewer = ({ xRes, yRes }) => {
 
   const rectOpts = {
     strokeStyle: "red",
-    lineWidth: 5,
+    lineWidth: xRes * (5 / 3840),
   };
 
   function mouseDown(e) {
@@ -260,43 +262,22 @@ const Viewer = ({ xRes, yRes }) => {
         Math.round(endX),
         Math.round(endY)
       );
-      // setMandCords(
-      //   Math.round(finalCords.startX),
-      //   Math.round(finalCords.startY),
-      //   Math.round(finalCords.endX),
-      //   Math.round(finalCords.endY)
-      // );
     }
-
-    // setMandCords(
-    //   Math.round(finalCords.startX),
-    //   Math.round(finalCords.startY),
-    //   Math.round(finalCords.endX),
-    //   Math.round(finalCords.endY)
-    // );
-    //setFirst(true);
   }
-  //useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
-
-  //let p = useGenPixels(0, 0, 3840, 2160, 1, 1, 186777600);
-
-  /////////////////////////////////////////////
-
-  // need to create two canvases, one for drawing and one for fractals
 
   return (
     <>
       <Canvas
         className="can"
         draw={drawMand}
-        xRes={3840}
-        yRes={2160}
+        xRes={xRes}
+        yRes={yRes}
         id="mandCan"
       />
       <Canvas
         className="can"
-        xRes={3840}
-        yRes={2160}
+        xRes={xRes}
+        yRes={yRes}
         draw={drawing && isDown ? drawRect : clearRect}
         id="rectCan"
         options={rectOpts}
