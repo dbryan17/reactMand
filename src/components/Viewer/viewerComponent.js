@@ -8,8 +8,11 @@ import Canvas from "./canvasComponent";
 import "./viewer.css";
 import { useEffect, useState } from "react";
 import useGenPixels from "../../helpers/genPixlesHook";
+import CordsBox from "../CordsBox/cordsBoxComponent";
+import { canvasToComplex } from "../../helpers/util";
 
-const Viewer = ({ xRes, yRes, back }) => {
+const Viewer = ({ xRes, yRes, back, dims, showCords }) => {
+  const [displayCords, setDisplayCords] = useState({ re: null, im: null });
   const [prevMandCords, setPrevMandCords] = useState([
     {
       startX: 0,
@@ -23,7 +26,7 @@ const Viewer = ({ xRes, yRes, back }) => {
   const [hereBack, setHereBack] = useState(back);
 
   useEffect(() => {
-    console.log("here");
+    // console.log("here");
     if (back !== hereBack) {
       setPrevMandCords((prevMandCords) => prevMandCords.slice(0, -1));
       setGenPixlesParams(paramsStack.pop());
@@ -39,6 +42,8 @@ const Viewer = ({ xRes, yRes, back }) => {
   });
 
   const [genPixlesParams, setGenPixlesParams] = useState({
+    type: "paramater",
+    cVal: (null, null),
     startX: 0,
     startY: 0,
     newCanWidth: xRes,
@@ -51,6 +56,8 @@ const Viewer = ({ xRes, yRes, back }) => {
   });
 
   let p = useGenPixels(
+    genPixlesParams.type,
+    genPixlesParams.cVal,
     genPixlesParams.startX,
     genPixlesParams.startY,
     genPixlesParams.newCanWidth,
@@ -83,7 +90,7 @@ const Viewer = ({ xRes, yRes, back }) => {
     let widthScale = width / xRes;
     let heightScale = height / yRes;
 
-    console.log(prevMandCords);
+    // console.log(prevMandCords);
 
     startX =
       prevMandCords.at(-1).widthScale * startX + prevMandCords.at(-1).startX;
@@ -215,10 +222,42 @@ const Viewer = ({ xRes, yRes, back }) => {
     setIsDown(true);
   }
 
+  function mouseMoveCalcCords(e) {
+    e.preventDefault();
+    // console.log(clinetDims);
+    // (widthScale * x) + startX)
+    let canX =
+      genPixlesParams.widthScale *
+        (e.nativeEvent.offsetX * (xRes / clinetDims.width)) +
+      genPixlesParams.startX;
+    let canY =
+      genPixlesParams.heightScale *
+        (e.nativeEvent.offsetY * (yRes / clinetDims.height)) +
+      genPixlesParams.startY;
+    //console.log("cans, ", canX, canY);
+
+    if (showCords) {
+      const [re, im] = canvasToComplex(canX, canY, xRes, yRes);
+      //console.log("cords: ", re, im);
+      setDisplayCords({ re: re, im: im });
+    }
+  }
+
+  // IF I WANT YOU TO BE ABLE TO SEE CORDS WHEN MOVING BOX LEAVE THIS, OTHERWISE GET RID OF
   function mouseMove(e) {
     e.preventDefault();
     // want to trigger a redraw - should do it by changing the draw function,
     // as change is props trigger re render
+
+    let canX = e.nativeEvent.offsetX * (xRes / clinetDims.width);
+    let canY = e.nativeEvent.offsetY * (yRes / clinetDims.height);
+
+    if (showCords) {
+      const [re, im] = canvasToComplex(canX, canY, xRes, yRes);
+      // console.log("cords: ", re, im);
+      setDisplayCords({ re: re, im: im });
+    }
+
     setDrawing(true);
 
     setFinalCords({
@@ -252,6 +291,8 @@ const Viewer = ({ xRes, yRes, back }) => {
       endY = tmpStart;
     }
 
+    // so this isn't working
+
     // instead call a function to with these and set all variables used in genPixles hook at once,
     // make that function dshould be a hook but I don't think it needs to
     if (!(startY === endY || startX === endX)) {
@@ -262,7 +303,20 @@ const Viewer = ({ xRes, yRes, back }) => {
         Math.round(endX),
         Math.round(endY)
       );
+    } else {
+      // this is a click - can do julia/ orbit here
+      // we have start cords in rectStartCords
+      // don't even really need a button, in mand, click goes to julia, in julia, click shows orbit
+      console.log("draw julia set");
     }
+
+    // reset variables - works - bug fixed
+    setFinalCords({
+      startX: null,
+      startY: null,
+      endX: null,
+      endY: null,
+    });
   }
 
   return (
@@ -282,9 +336,12 @@ const Viewer = ({ xRes, yRes, back }) => {
         id="rectCan"
         options={rectOpts}
         mouseDown={(e) => mouseDown(e)}
-        mouseMove={(e) => (isDown ? mouseMove(e) : null)}
+        mouseMove={(e) =>
+          isDown ? mouseMove(e) : showCords ? mouseMoveCalcCords(e) : null
+        }
         mouseUp={(e) => mouseUp(e)}
       />
+      <CordsBox display={showCords} cords={displayCords} />
     </>
   );
 };

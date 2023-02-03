@@ -2,6 +2,8 @@ import createModule from "../mandlebrotCPP.mjs";
 import { useState, useEffect, useRef } from "react";
 
 const useGenPixles = (
+  type,
+  cVal,
   startX,
   startY,
   newCanWidth,

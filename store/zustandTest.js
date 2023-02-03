@@ -6,3 +6,5 @@ const useDimStore = create((set) => ({
   endX: 0,
   endY: 0,
 }));
+
+//const useClickStore = create((set))

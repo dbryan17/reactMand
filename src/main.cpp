@@ -51,8 +51,11 @@ extern "C" {
   {
     for (int y = 0; y < floor(newCanHeight); y++)
     {
+      // double new_x = (((widthScale * x) + startX) - width / 2.) / (height / 2.) - .55;
+      // double new_y = (((heightScale * y) + startY) - height / 2.) / (height / 2.);
       double new_x = (((widthScale * x) + startX) - width / 2.) / (height / 2.) - .55;
-      double new_y = (((heightScale * y) + startY) - height / 2.) / (height / 2.);
+      double new_y = -(((heightScale * y) + startY) - height / 2.) / (height / 2.);
+
 
       // double new_x = (x - width / 2.) / (height / 2.) - 0.55;
       // double new_y = (y - height / 2.) / (height / 2.);
@@ -67,5 +70,33 @@ extern "C" {
     }
   }
 }
+
+//   EMSCRIPTEN_KEEPALIVE void genJuliaPixles(double startX, double startY, double newCanWidth, double newCanHeight, int width, int height, double widthScale, double heightScale, uint8_t *ptr)
+// {
+//   // ptr is array
+//   // it will alreadly be the right size
+
+//   for (int x = 0; x < floor(newCanWidth); x++)
+//   {
+//     for (int y = 0; y < floor(newCanHeight); y++)
+//     {
+//       double new_x = (((widthScale * x) + startX) - width / 2.) / (height / 2.) - .55;
+//       double new_y = (((heightScale * y) + startY) - height / 2.) / (height / 2.);
+
+//       // double new_x = (x - width / 2.) / (height / 2.) - 0.55;
+//       // double new_y = (y - height / 2.) / (height / 2.);
+
+//       // still want to go through 
+
+//       int iterations = mandlebrot(new_x, new_y);
+
+//       ptr[getIdx(x, y, width, 1)] = iterations * 4;
+//       ptr[getIdx(x, y, width, 3)] = 255;
+
+//       //// imageSmoothingEnabled to false **** this might save time, and also make it
+//       // look less weird when you zoon in
+//     }
+//   }
+// }
 
 }
