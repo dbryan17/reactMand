@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 const useGenPixles = (
   type,
   cVal,
+  zVal,
   startX,
   startY,
   newCanWidth,
@@ -16,6 +17,7 @@ const useGenPixles = (
 ) => {
   // const [genPixles, setGenPixles] = useState();
   //var [myModule, setMyModule] = useState();
+  //console.log(type, cVal[0], cVal[1]);
 
   const [pixles, setPixles] = useState(null);
   //const [pixelArray, setPixelArray] = useState(null);
@@ -40,6 +42,12 @@ const useGenPixles = (
           "number",
           "number",
           "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
         ]);
 
         //setMyModule(Module);
@@ -49,6 +57,24 @@ const useGenPixles = (
     };
 
     const myGenPixles = async () => {
+      // SEEING IF THIS WORKS WITH GETTING A POINTER TO THE DOUBLE ARRAY HERE
+      // BUT WILL PROBALBY BE BEST JUST TO HAVE A DIFFERENT FUNCTION FOR GETTING
+      // THE ORBITS
+
+      let orbitPtr = myModule.current._malloc(
+        164 * Float64Array.BYTES_PER_ELEMENT
+      );
+
+      console.log(orbitPtr);
+
+      let orbitHeap = new Float64Array(
+        myModule.current.HEAPF64.buffer,
+        orbitPtr,
+        164 * Float64Array.BYTES_PER_ELEMENT
+      );
+
+      console.log(orbitHeap);
+
       // using emscriptens malloc to allocate memory on the emscripten heap
       // of array this returns a pointer to it
       let pixlesPtr = myModule.current._malloc(
@@ -64,6 +90,11 @@ const useGenPixles = (
 
       // call function
       await genPixles.current(
+        type,
+        cVal[0],
+        cVal[1],
+        zVal[0],
+        zVal[1],
         startX,
         startY,
         newCanWidth,
@@ -72,23 +103,41 @@ const useGenPixles = (
         canHeight,
         widthScale,
         heightScale,
-        dataheap.byteOffset
+        dataheap.byteOffset,
+        orbitHeap.byteOffset
       );
 
       // get the result of the function from the dataheap by way of creating a js array
-      let tmpPixelArray = new Uint8ClampedArray(
-        dataheap.buffer,
-        dataheap.byteOffset,
-        arrayLength
-      );
 
-      myModule.current._free(myModule.current.HEAPU8.buffer);
+      console.log("hhhh", orbitHeap.buffer, orbitHeap.byteOffset);
 
-      let data = new ImageData(tmpPixelArray, canWidth, canHeight);
+      // this works on a fresh make, then fails.... weird
+      if (type === 2) {
+        let tmpOrbitArray = new Float64Array(
+          orbitHeap.buffer,
+          orbitHeap.byteOffset,
+          164
+        );
+        myModule.current._free(myModule.current.HEAPF64.buffer);
+        let orbitArr = tmpOrbitArray;
 
-      setPixles(data);
+        console.log("here", orbitArr);
 
-      return data;
+        return orbitArr;
+      } else {
+        let tmpPixelArray = new Uint8ClampedArray(
+          dataheap.buffer,
+          dataheap.byteOffset,
+          arrayLength
+        );
+        myModule.current._free(myModule.current.HEAPF64.buffer);
+        myModule.current._free(myModule.current.HEAPU8.buffer);
+
+        let data = new ImageData(tmpPixelArray, canWidth, canHeight);
+
+        setPixles(data);
+        return data;
+      }
     };
     if (!myModule.current) {
       myCreateModule();
@@ -99,6 +148,8 @@ const useGenPixles = (
 
     // maybe return a cleanup to reset variales
   }, [
+    type,
+    cVal,
     startX,
     startY,
     newCanWidth,
