@@ -49,19 +49,20 @@ const Viewer = ({ xRes, yRes, back, dims, showCords }) => {
     height: null,
   });
 
+  // first gen Pixles
   const [genPixlesParams, setGenPixlesParams] = useState({
-    type: 0,
-    cVal: [0, 0],
-    zVal: [0, 0],
-    startX: 0,
-    startY: 0,
-    newCanWidth: xRes,
-    newCanHeight: yRes,
-    canWidth: xRes,
-    canHeight: yRes,
-    widthScale: 1,
-    heightScale: 1,
-    arrayLength: xRes * yRes * 4,
+    type: 0, // paramter plane
+    cVal: [0, 0], // c will get set to pixel
+    zVal: [0, 0], // 0,0 is ciritcal point
+    startX: 0, // box zoom stuff
+    startY: 0, // box zoom stuff
+    newCanWidth: xRes, // box zoom stuff
+    newCanHeight: yRes, // box zoom stuff
+    canWidth: xRes, // box zoom stuff
+    canHeight: yRes, // box zoom stuff
+    widthScale: 1, // box zoom stuff
+    heightScale: 1, // box zoom stuff
+    arrayLength: xRes * yRes * 4, // length of aray to return
   });
 
   let p = useGenPixels(
