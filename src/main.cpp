@@ -40,6 +40,8 @@ int julia(double zReP, double zImP, double cReP, double cImP);
 
 // }
 
+// 17308
+
 // maybe have the complex c passed in, might take some time to create these
 // which is why it is slowing it down
 int julia(double zReP, double zImP, double cReP, double cImP) {
@@ -87,7 +89,7 @@ int getIdx(int x, int y, int width, int color)
 // would be really nice to make this for loop parrell computing - for when I get back to school
 
 extern "C" {
-  EMSCRIPTEN_KEEPALIVE void genPixles(int type, double cRe, double cIm, double zRe, double zIm, double startX, double startY, double newCanWidth, double newCanHeight, int width, int height, double widthScale, double heightScale, uint8_t *ptr, double_t *p)
+  EMSCRIPTEN_KEEPALIVE void genPixles(int type, double cRe, double cIm, double zRe, double zIm, double startX, double startY, double newCanWidth, double newCanHeight, int width, int height, double widthScale, double heightScale, uint8_t *ptr)
 {
   // ptr is array
   // it will alreadly be the right size
@@ -98,9 +100,9 @@ extern "C" {
   std::complex<double> z(zRe, zIm);
   std::complex<double> c(cRe, cIm);
   for (int i = 1; i < 64; i++) {
-    // at i*2-2 and i*2-1
-    p[i*2-2] = real(z);
-    p[i*2-1] = imag(z);
+    ///// // at i*2-2 and i*2-1
+    // p[i*2-2] = real(z);
+    // p[i*2-1] = imag(z);
     std::complex<double> z2 = z*z + c;
     if(abs(z2) > 4) {
       break;
@@ -174,5 +176,36 @@ extern "C" {
 //     }
 //   }
 // }
+
+ EMSCRIPTEN_KEEPALIVE void orbit(int type, double cRe, double cIm, double zRe, double zIm, double startX, double startY, double newCanWidth, double newCanHeight, int width, int height, double widthScale, double heightScale, double_t *p)
+{
+  // ptr is array
+  // it will alreadly be the right size
+
+  if(type == 2) {
+    // draw orbit for julia set with cs given for given z value 
+    // orbit(zRe, zIm, cRe, cIm, p);
+  std::complex<double> z(zRe, zIm);
+  std::complex<double> c(cRe, cIm);
+  for (int i = 1; i < 64; i++) {
+    ///// // at i*2-2 and i*2-1
+    p[i*2-2] = real(z);
+    p[i*2-1] = imag(z);
+    std::complex<double> z2 = z*z + c;
+    if(abs(z2) > 4) {
+      break;
+    }
+    z = z2;
+  }
+
+
+  }
+
+
+
+
+}
+
+
 
 }
