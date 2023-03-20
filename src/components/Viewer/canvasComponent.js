@@ -31,6 +31,10 @@ const Canvas = ({
 
   // console.log(xRes / yRes === 3840 / 2160);
 
+  let i = 0;
+
+  console.log(draw);
+
   let styWidth = window.innerWidth * 0.8;
   let styHeight = window.innerHeight * 0.8;
 

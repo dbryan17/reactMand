@@ -1,6 +1,26 @@
 import createModule from "../mandlebrotCPP.mjs";
 import { useState, useEffect, useRef } from "react";
 
+/*
+    "string", // script
+    "number", // type (param, dyn, orbit)
+    "number", // fixed var re part (c for julia set)
+    "number", // fixed var im part (c for julia set)
+    "number", // crit point re part (z for mandlebrot set)
+    "number", // crit point im part (z for mandlebrot set)
+    "number", // start X - box zoom
+    "number", // start Y - box zoom
+    "number", // newCanWidth - box zoom
+    "number", // newCanHeight - box zoom
+    "number", // original width
+    "number", // original height
+    "number", // width scale
+    "number", // height scale
+    "number", // pixel pointer
+
+
+*/
+
 const useGenPixles = (
   type,
   cVal,
@@ -26,6 +46,7 @@ const useGenPixles = (
   var genPixles = useRef(null);
   // for some reason this doesn't work in a useState, maybe try useRef? - always doesn't work as var, so need to chagne thius
   // to save tiume'
+  var genOribt = useRef(null);
 
   var myModule = useRef(null);
 
@@ -34,6 +55,22 @@ const useGenPixles = (
       createModule().then((Module) => {
         genPixles.current = Module.cwrap("genPixles", "null", [
           "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+          "number",
+        ]);
+
+        genOribt.current = Module.cwrap("orbit", "null", [
           "number",
           "number",
           "number",
@@ -61,19 +98,52 @@ const useGenPixles = (
       // BUT WILL PROBALBY BE BEST JUST TO HAVE A DIFFERENT FUNCTION FOR GETTING
       // THE ORBITS
 
-      let orbitPtr = myModule.current._malloc(
-        164 * Float64Array.BYTES_PER_ELEMENT
-      );
+      if (type === 2) {
+        let orbitPtr = myModule.current._malloc(
+          164 * Float64Array.BYTES_PER_ELEMENT
+        );
+        console.log(orbitPtr);
 
-      console.log(orbitPtr);
+        let orbitHeap = new Float64Array(
+          myModule.current.HEAPF64.buffer,
+          orbitPtr,
+          164 * Float64Array.BYTES_PER_ELEMENT
+        );
+        console.log(orbitHeap);
 
-      let orbitHeap = new Float64Array(
-        myModule.current.HEAPF64.buffer,
-        orbitPtr,
-        164 * Float64Array.BYTES_PER_ELEMENT
-      );
+        await genOribt.current(
+          type,
+          cVal[0],
+          cVal[1],
+          zVal[0],
+          zVal[1],
+          startX,
+          startY,
+          newCanWidth,
+          newCanHeight,
+          canWidth,
+          canHeight,
+          widthScale,
+          heightScale,
+          //dataheap.byteOffset
+          orbitHeap.byteOffset
+        );
 
-      console.log(orbitHeap);
+        // get the result of the function from the dataheap by way of creating a js array
+
+        console.log("hhhh", orbitHeap.buffer, orbitHeap.byteOffset);
+
+        let tmpOrbitArray = new Float64Array(
+          orbitHeap.buffer,
+          orbitHeap.byteOffset,
+          164
+        );
+        myModule.current._free(myModule.current.HEAPF64.buffer);
+        let orbitArr = tmpOrbitArray;
+
+        console.log("here", orbitArr);
+        return orbitArr;
+      }
 
       // using emscriptens malloc to allocate memory on the emscripten heap
       // of array this returns a pointer to it
@@ -103,41 +173,28 @@ const useGenPixles = (
         canHeight,
         widthScale,
         heightScale,
-        dataheap.byteOffset,
-        orbitHeap.byteOffset
+        dataheap.byteOffset
+        //orbitHeap.byteOffset
       );
 
-      // get the result of the function from the dataheap by way of creating a js array
-
-      console.log("hhhh", orbitHeap.buffer, orbitHeap.byteOffset);
-
       // this works on a fresh make, then fails.... weird
-      if (type === 2) {
-        let tmpOrbitArray = new Float64Array(
-          orbitHeap.buffer,
-          orbitHeap.byteOffset,
-          164
-        );
-        myModule.current._free(myModule.current.HEAPF64.buffer);
-        let orbitArr = tmpOrbitArray;
+      // if (type === 2) {
+      //
 
-        console.log("here", orbitArr);
+      //   return orbitArr;
+      // }
+      let tmpPixelArray = new Uint8ClampedArray(
+        dataheap.buffer,
+        dataheap.byteOffset,
+        arrayLength
+      );
+      myModule.current._free(myModule.current.HEAPF64.buffer);
+      myModule.current._free(myModule.current.HEAPU8.buffer);
 
-        return orbitArr;
-      } else {
-        let tmpPixelArray = new Uint8ClampedArray(
-          dataheap.buffer,
-          dataheap.byteOffset,
-          arrayLength
-        );
-        myModule.current._free(myModule.current.HEAPF64.buffer);
-        myModule.current._free(myModule.current.HEAPU8.buffer);
+      let data = new ImageData(tmpPixelArray, canWidth, canHeight);
 
-        let data = new ImageData(tmpPixelArray, canWidth, canHeight);
-
-        setPixles(data);
-        return data;
-      }
+      setPixles(data);
+      return data;
     };
     if (!myModule.current) {
       myCreateModule();
